@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.set("trust proxy", true);
 
 const ROOT_KEY = process.env.ROOT_KEY || crypto.randomBytes(32).toString("hex");
 
@@ -195,7 +196,7 @@ app.post("/api/payment-request", async (req, res) => {
   }
 });
 
-app.get("/api/bitcoin-price", l402Middleware, async (req, res) => {
+const getBitcoinPrice = async (req, res) => {
   try {
     const response = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
@@ -207,9 +208,12 @@ app.get("/api/bitcoin-price", l402Middleware, async (req, res) => {
       note: "This live Bitcoin price was served using the L402 protocol!",
     });
   } catch (error) {
+    console.error("Fetch error:", error);
     res.status(500).json({ error: "Failed to fetch Bitcoin price" });
   }
-});
+};
+
+app.get("/", l402Middleware, getBitcoinPrice);
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;
